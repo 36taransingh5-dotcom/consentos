@@ -130,6 +130,15 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
             <h1 className="mt-1.5 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
               {serviceName} · {purposeLabel(r.purpose)}
             </h1>
+            <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[12px] text-muted">
+              <span title={record.id}>No. {record.id.slice(0, 8).toUpperCase()}</span>
+              <span aria-hidden="true">·</span>
+              <time dateTime={record.issuedAt}>{formatDateTime(record.issuedAt)}</time>
+              <span aria-hidden="true">·</span>
+              <span>Policy v{p.policyVersion}</span>
+              <span aria-hidden="true">·</span>
+              <span>Ed25519</span>
+            </p>
           </div>
         </div>
         <StatusPill

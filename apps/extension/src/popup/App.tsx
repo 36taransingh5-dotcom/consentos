@@ -1,4 +1,11 @@
-import { dataTypeNoun, explainRule, isKnownPurpose, PURPOSE_CATALOG, purposeActivity } from "@consentos/policy-engine";
+import {
+  dataTypeNoun,
+  explainRule,
+  isKnownPurpose,
+  pendingReason,
+  PURPOSE_CATALOG,
+  purposeActivity,
+} from "@consentos/policy-engine";
 import type { EventSummary, ExtensionState, PendingSummary } from "@consentos/shared";
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, fetchState, resolveRequest, revokeGrant } from "../lib/api";
@@ -304,7 +311,7 @@ function Pending({
             {p.retentionDays !== null ? `, kept ${p.retentionDays} days` : ""}.
           </p>
           <p className="muted" style={{ fontSize: 12 }}>
-            {p.reason}
+            {pendingReason(p.reasonCode, p.serviceName)}
           </p>
           <div className="pending-actions">
             <button type="button" className="btn" disabled={busy === p.requestId} onClick={() => onResolve(p, "DENY")}>
@@ -419,6 +426,7 @@ function Ready({
   return (
     <>
       <div className="body">
+        <Pending items={site.pending} busy={busy} onResolve={onResolve} />
         <div className="card">
           <div className="site">
             <span className="avatar" style={{ background: BRAND[site.service.id] ?? "#3a3a40" }} aria-hidden="true">
@@ -427,7 +435,8 @@ function Ready({
             <div style={{ minWidth: 0 }}>
               <p className="site-name">{site.service.name}</p>
               <p className="site-meta">
-                {site.service.domain} · {site.service.verified ? "Verified integration" : "Integration"}
+                {site.service.domain}
+                {site.service.verified ? " · verified" : ""}
               </p>
             </div>
             <span className="pill allow">
@@ -497,7 +506,6 @@ function Ready({
 
         </div>
 
-        <Pending items={site.pending} busy={busy} onResolve={onResolve} />
         {actionError && <p className="error-text">{actionError}</p>}
         <Rules state={state} />
       </div>

@@ -392,7 +392,7 @@ export function PixlyApp({ consentosUrl }: { consentosUrl: string }) {
                     <li key={p.id} className="overflow-hidden rounded-2xl border border-line bg-surface">
                       <Scene seed={p.seed} className="aspect-[4/5] w-full" label={p.caption} />
                       <div className="px-3 py-2">
-                        <p className="truncate text-[13px] font-medium">{p.caption}</p>
+                        <p className="line-clamp-2 text-[13px] leading-snug font-medium">{p.caption}</p>
                         <p className="truncate text-[12px] text-muted">{p.author}</p>
                       </div>
                     </li>
@@ -441,7 +441,7 @@ export function PixlyApp({ consentosUrl }: { consentosUrl: string }) {
                     )}
                     <div className="flex items-start gap-2 px-3.5 py-3">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-medium">{p.caption}</p>
+                        <p className="line-clamp-2 text-[14px] leading-snug font-medium">{p.caption}</p>
                         <p className="truncate text-[12.5px] text-muted">{p.place}</p>
                       </div>
                       <button
@@ -597,7 +597,7 @@ export function PixlyApp({ consentosUrl }: { consentosUrl: string }) {
       {toast && (
         <div
           role="status"
-          className="fixed right-4 bottom-16 z-40 w-[min(380px,calc(100vw-32px))] animate-pop rounded-2xl border border-line bg-surface p-4 shadow-xl"
+          className="fixed bottom-16 left-4 z-40 w-[min(380px,calc(100vw-32px))] animate-pop rounded-2xl border border-line bg-surface p-4 shadow-xl sm:left-6"
         >
           <div className="flex gap-3">
             <span

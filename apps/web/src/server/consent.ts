@@ -230,6 +230,7 @@ export interface PendingRequest {
   purpose: string;
   dataType: string;
   retentionDays: number | null;
+  reasonCode: string;
   reason: string;
   createdAt: string;
 }
@@ -254,6 +255,7 @@ export async function listPendingRequests(q: Queryable, userId: string, serviceI
     purpose: r.purpose,
     dataType: r.data_type,
     retentionDays: r.retention_days,
+    reasonCode: r.reason_code,
     reason: r.reason,
     createdAt: iso(r.created_at),
   }));

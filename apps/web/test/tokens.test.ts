@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { issueToken, verifyToken } from "@/server/auth/tokens";
 import { hashPassword, verifyPassword } from "@/server/auth/password";
 import { originMatchesDomain } from "@/server/services";
+import { postgresOptions } from "@/server/db";
 
 const user = { id: "7e57de30-0000-4000-8000-000000000001", email: "demo@consentos.dev" };
 
@@ -42,5 +43,18 @@ describe("originMatchesDomain", () => {
     expect(originMatchesDomain("http://localhost:3002", "localhost:3001")).toBe(false);
     expect(originMatchesDomain("https://pixly.example.evil.test", "pixly.example")).toBe(false);
     expect(originMatchesDomain("not a url", "pixly.example")).toBe(false);
+  });
+});
+
+describe("postgresOptions", () => {
+  it("drops sslmode and keeps TLS on for remote hosts", () => {
+    const remote = postgresOptions("postgres://u:p@aws-0-eu-west-2.pooler.supabase.com:6543/postgres?sslmode=require&supa=base-pooler.x");
+    expect(remote.connectionString).not.toContain("sslmode");
+    expect(remote.connectionString).toContain("supa=base-pooler.x");
+    expect(remote.ssl).toEqual({ rejectUnauthorized: false });
+  });
+
+  it("uses plain connections locally", () => {
+    expect(postgresOptions("postgres://postgres@127.0.0.1:5432/postgres").ssl).toBe(false);
   });
 });

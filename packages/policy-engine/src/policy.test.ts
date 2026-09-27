@@ -6,6 +6,7 @@ import {
   explainRule,
   isValidPolicy,
   normalizePolicy,
+  pendingReason,
   purposeLabel,
   summarizePolicy,
   validatePolicy,
@@ -114,5 +115,13 @@ describe("explainRule", () => {
     expect(explainRule(undefined, "deny")).toBeNull();
     expect(explainRule("policy.unknown", "deny")).toBeNull();
     expect(explainRule("policy.advertising", "sometimes")).toBeNull();
+  });
+});
+
+describe("pendingReason", () => {
+  it("addresses the user, not the service", () => {
+    expect(pendingReason("PURPOSE_REQUIRES_CONFIRMATION", "Pixly")).toBe("Your rules say to ask you first.");
+    expect(pendingReason("RETENTION_UNSPECIFIED", "Pixly")).toContain("Pixly didn't say how long");
+    expect(pendingReason("UNKNOWN_PURPOSE", "Pixly")).toContain("decision is yours");
   });
 });

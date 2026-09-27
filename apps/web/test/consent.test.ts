@@ -445,6 +445,30 @@ describe("row-level security", () => {
     expect(rows.map((r) => r.id)).toContain("pixly");
   });
 
+  it("Supabase's API roles (anon, authenticated) cannot reach ConsentOS tables at all", async () => {
+    await evaluateConsent(await service("pixly"), body());
+    for (const role of ["anon", "authenticated"]) {
+      for (const table of ["privacy_policies", "consent_requests", "consent_receipts", "audit_events", "services"]) {
+        await expect(
+          asService(async (tx) => {
+            await tx.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: DEMO_USER_ID })]);
+            await tx.query(`set local role ${role}`);
+            return tx.query(`select * from public.${table} limit 1`);
+          }),
+        ).rejects.toThrow(/permission denied/);
+      }
+      await expect(
+        asService(async (tx) => {
+          await tx.query(`set local role ${role}`);
+          return tx.query(
+            "insert into public.privacy_policies (user_id, version, policy_json, policy_hash) values ($1, 99, '{}'::jsonb, $2)",
+            [DEMO_USER_ID, `sha256:${"0".repeat(64)}`],
+          );
+        }),
+      ).rejects.toThrow(/permission denied/);
+    }
+  });
+
   it("users cannot un-revoke a grant", async () => {
     const res = await evaluateConsent(await service("pixly"), body());
     await revokeGrant(DEMO_USER_ID, res.receiptId!);

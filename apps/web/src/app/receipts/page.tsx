@@ -1,4 +1,4 @@
-import { dataTypeNoun, purposeActivity, purposeLabel } from "@consentos/policy-engine";
+import { dataTypeNoun, pendingReason, purposeActivity, purposeLabel } from "@consentos/policy-engine";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ServiceAvatar } from "@/components/service-avatar";
@@ -82,7 +82,7 @@ export default async function ReceiptsPage() {
                     {p.serviceName} wants to use your {dataTypeNoun(p.dataType)} for {purposeActivity(p.purpose)}
                   </p>
                   <p className="mt-0.5 text-[12.5px] text-muted">
-                    {formatRetention(p.retentionDays)} · {p.reason}
+                    {formatRetention(p.retentionDays)} · {pendingReason(p.reasonCode, p.serviceName)}
                   </p>
                 </div>
                 <ResolveButtons requestId={p.requestId} />

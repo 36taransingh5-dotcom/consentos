@@ -61,7 +61,8 @@ export function resetConfigForTests(): void {
 
 function loadConfig(): ServerConfig {
   const env = process.env;
-  const databaseUrl = env.DATABASE_URL || undefined;
+  // POSTGRES_URL is what Vercel's Supabase integration provides (the pooled connection).
+  const databaseUrl = env.DATABASE_URL || env.POSTGRES_URL || undefined;
   const storage: StorageMode = databaseUrl ? "postgres" : "pglite";
   const local = storage === "pglite";
   // Runtime-only location for local data; not part of the traced server bundle.

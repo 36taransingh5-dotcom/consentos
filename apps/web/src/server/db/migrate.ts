@@ -49,11 +49,16 @@ export async function migrate(
   for (const file of files) {
     if (applied.has(file)) continue;
     const sql = fs.readFileSync(path.join(migrationsDir, file), "utf8");
-    await db.transaction(async (tx) => {
+    const didApply = await db.transaction(async (tx) => {
+      // Serverless cold starts can race; one instance migrates, the rest wait and skip.
+      await tx.query("select pg_advisory_xact_lock(hashtext('consentos_migrations'))");
+      const [done] = await tx.query("select 1 from consentos_private.schema_migrations where name = $1", [file]);
+      if (done) return false;
       await tx.exec(sql);
       await tx.query("insert into consentos_private.schema_migrations (name) values ($1)", [file]);
+      return true;
     });
-    ran.push(file);
+    if (didApply) ran.push(file);
   }
   return ran;
 }

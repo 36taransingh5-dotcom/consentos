@@ -74,12 +74,23 @@ async function openPGlite(dir: string): Promise<Database> {
   };
 }
 
+/**
+ * node-postgres treats `sslmode=require` in a URL as full certificate
+ * verification, which fails against Supabase's pooler certificate chain.
+ * Strip it and use an encrypted connection without CA pinning instead.
+ */
+export function postgresOptions(url: string): { connectionString: string; ssl: false | { rejectUnauthorized: false } } {
+  const parsed = new URL(url);
+  parsed.searchParams.delete("sslmode");
+  const local = ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname);
+  return { connectionString: parsed.toString(), ssl: local ? false : { rejectUnauthorized: false } };
+}
+
 async function openPostgres(url: string): Promise<Database> {
   const { Pool } = await import("pg");
   const pool = new Pool({
-    connectionString: url,
+    ...postgresOptions(url),
     max: Number(process.env.CONSENTOS_DB_POOL_SIZE ?? 5),
-    ssl: /localhost|127\.0\.0\.1/.test(url) ? undefined : { rejectUnauthorized: false },
   });
 
   return {
@@ -115,17 +126,19 @@ async function openPostgres(url: string): Promise<Database> {
 }
 
 /**
- * Run `fn` as the given end user: inside a transaction, with the Supabase
- * `authenticated` role and JWT claims set, so row-level security applies to
- * every statement. A missing WHERE clause cannot leak another user's data.
+ * Run `fn` as the given end user: inside a transaction, as the dedicated
+ * `consentos_user` role with the user's JWT claims set, so row-level security
+ * applies to every statement. A missing WHERE clause cannot leak another
+ * user's data. (Supabase's own API roles have no access to these tables; see
+ * supabase/migrations/20260927000000_consentos_user_role.sql.)
  */
 export async function asUser<T>(userId: string, fn: (tx: Queryable) => Promise<T>): Promise<T> {
   const db = await getDb();
   return db.transaction(async (tx) => {
     await tx.query("select set_config('request.jwt.claims', $1, true)", [
-      JSON.stringify({ sub: userId, role: "authenticated" }),
+      JSON.stringify({ sub: userId, role: "consentos_user" }),
     ]);
-    await tx.query("set local role authenticated");
+    await tx.query("set local role consentos_user");
     return fn(tx);
   });
 }

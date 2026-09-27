@@ -210,6 +210,7 @@ export interface PendingSummary {
   purposeLabel: string;
   dataType: string;
   retentionDays: number | null;
+  reasonCode: string;
   reason: string;
   createdAt: string;
 }
