@@ -1,4 +1,6 @@
-import { DEFAULT_POLICY } from "@consentos/policy-engine";
+import { DEFAULT_POLICY, evaluate, explainRule } from "@consentos/policy-engine";
+import Link from "next/link";
+import { LogoMark } from "@/components/logo";
 import { CodeBlock } from "@/components/code-block";
 import { ArrowIcon, ButtonLink, Card, CheckIcon, CrossIcon, Eyebrow, StatusPill } from "@/components/ui";
 import { shortHash } from "@/lib/format";
@@ -7,77 +9,65 @@ import { hashPolicy } from "@/server/policies";
 
 const PIXLY_URL = process.env.NEXT_PUBLIC_PIXLY_URL ?? "http://localhost:3001";
 
-const heroRows = [
-  {
-    request: "uploaded_images → personalization",
-    detail: "30 days · not shared",
-    label: "Personalised recommendations",
-    status: "allow" as const,
-    note: "Within your 90-day limit",
-  },
-  {
-    request: "uploaded_images → foundation_model_training",
-    detail: "365 days · not shared",
-    label: "AI model training",
-    status: "block" as const,
-    note: "Blocked by your rules",
-  },
-  {
-    request: "uploaded_images → personalization",
-    detail: "730 days · not shared",
-    label: "Photo memories",
-    status: "block" as const,
-    note: "730 days exceeds your 90-day limit",
-  },
-];
+/** Three requests Pixly really makes, decided here by the real engine against the default rules. */
+const heroRequests = [
+  { label: "Smart recommendations", request: { dataType: "uploaded_images", purpose: "personalization", retentionDays: 30 } },
+  { label: "Help train Pixly AI", request: { dataType: "uploaded_images", purpose: "foundation_model_training", retentionDays: 365 } },
+  { label: "Pixly Memories", request: { dataType: "uploaded_images", purpose: "personalization", retentionDays: 730 } },
+] as const;
 
-function HeroDecisions() {
+function ExtensionPreview() {
+  const rows = heroRequests.map((row) => ({ ...row, result: evaluate(DEFAULT_POLICY, row.request) }));
   return (
-    <Card className="animate-fade-up overflow-hidden" aria-label="Example decisions made by ConsentOS">
-      <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
-        <div className="flex items-center gap-2.5">
-          <span className="grid size-7 place-items-center rounded-lg bg-[#ff5a4e] text-[13px] font-bold text-white">P</span>
-          <div>
-            <p className="text-[13px] font-medium text-ink">Pixly asked</p>
-            <p className="text-[11.5px] text-muted">3 requests · decided by your rules</p>
-          </div>
+    <figure className="animate-fade-up" aria-label="The ConsentOS extension on Pixly, with decisions from the real engine">
+      <Card className="overflow-hidden">
+        <div className="flex items-center gap-2.5 border-b border-line px-5 py-3.5">
+          <LogoMark className="size-5 text-ink" />
+          <span className="text-[14px] font-semibold tracking-tight text-ink">ConsentOS</span>
+          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-allow-line bg-allow-bg px-2.5 py-0.5 text-[11px] font-semibold tracking-[0.06em] text-allow uppercase">
+            <CheckIcon className="size-3" /> Protected on Pixly
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted">
-          <span className="size-1.5 rounded-full bg-allow" aria-hidden="true" />
-          Live policy v1
-        </span>
-      </div>
-      <ul className="divide-y divide-line">
-        {heroRows.map((row) => (
-          <li key={row.request + row.detail} className="flex items-start gap-4 px-5 py-4">
-            <span
-              className={
-                row.status === "allow"
-                  ? "mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-allow-bg text-allow"
-                  : "mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-block-bg text-block"
-              }
-              aria-hidden="true"
-            >
-              {row.status === "allow" ? <CheckIcon /> : <CrossIcon />}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-medium text-ink">{row.label}</p>
-              <p className="mt-0.5 truncate font-mono text-[11.5px] text-muted">{row.request}</p>
-              <p className="mt-1 text-[12px] text-muted">
-                {row.detail} · <span className="text-ink-2">{row.note}</span>
-              </p>
-            </div>
-            <StatusPill status={row.status}>{row.status === "allow" ? "Allowed" : "Blocked"}</StatusPill>
-          </li>
-        ))}
-      </ul>
-      <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-2 px-5 py-3 text-[12px] text-muted">
-        <span>Every answer is a signed receipt</span>
-        <span className="inline-flex items-center gap-1.5 text-allow">
-          <CheckIcon className="size-3.5" /> Ed25519 signature valid
-        </span>
-      </div>
-    </Card>
+        <ul className="divide-y divide-line">
+          {rows.map(({ label, request, result }) => {
+            const allowed = result.decision === "ALLOW";
+            const rule = explainRule(result.details?.rule, result.details?.ruleValue);
+            return (
+              <li key={label} className="flex items-start gap-4 px-5 py-4">
+                <span
+                  className={
+                    allowed
+                      ? "mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-allow-bg text-allow"
+                      : "mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-block-bg text-block"
+                  }
+                  aria-hidden="true"
+                >
+                  {allowed ? <CheckIcon /> : <CrossIcon />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-medium text-ink">{label}</p>
+                  <p className="mt-0.5 truncate font-mono text-[11.5px] text-muted">
+                    {request.purpose} · {request.retentionDays} days
+                  </p>
+                  {rule && (
+                    <p className="mt-1 text-[12px] text-muted">
+                      Your rule: <span className="text-ink-2">{rule.label}</span>{" "}
+                      <span className={allowed ? "font-semibold text-allow" : "font-semibold text-block"}>
+                        {rule.display}
+                      </span>
+                    </p>
+                  )}
+                </div>
+                <StatusPill status={allowed ? "allow" : "block"}>{allowed ? "Allowed" : "Blocked"}</StatusPill>
+              </li>
+            );
+          })}
+        </ul>
+      </Card>
+      <figcaption className="mt-3 text-center text-[12px] text-muted">
+        Decided by the real policy engine against the default rules as this page rendered.
+      </figcaption>
+    </figure>
   );
 }
 
@@ -169,10 +159,13 @@ export default function Home() {
             </ButtonLink>
           </div>
           <p className="mt-6 text-[13px] text-muted">
-            No banners, no LLM guesswork. Deterministic decisions, signed receipts, enforced at runtime.
+            No banners, no LLM guesswork. Deterministic decisions, signed receipts, enforced at runtime.{" "}
+            <Link href="/extension/connect" className="font-medium text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink">
+              Get the browser extension
+            </Link>
           </p>
         </div>
-        <HeroDecisions />
+        <ExtensionPreview />
       </section>
 
       <section aria-labelledby="how" className="border-y border-line bg-surface">
@@ -224,7 +217,7 @@ export default function Home() {
             <CodeBlock title="pixly — runtime enforcement" lang="http" code={enforcementSnippet} />
             <Card className="p-5">
               <div className="flex items-center justify-between">
-                <Eyebrow>Consent receipt</Eyebrow>
+                <Eyebrow>What a receipt binds</Eyebrow>
                 <StatusPill status="allow">Allowed</StatusPill>
               </div>
               <p className="mt-3 text-[15px] font-medium text-ink">Pixly · Personalised recommendations</p>
@@ -233,10 +226,10 @@ export default function Home() {
                 <dd className="font-mono text-ink-2">v1 · {policyHash}</dd>
                 <dt className="text-muted">Request</dt>
                 <dd className="font-mono text-ink-2">{requestHash}</dd>
-                <dt className="text-muted">Integrity</dt>
-                <dd className="flex items-center gap-1.5 text-allow">
-                  <CheckIcon className="size-3.5" /> Signature valid · payload unchanged
-                </dd>
+                <dt className="text-muted">Conditions</dt>
+                <dd className="text-ink-2">uploaded images · 30 days · not shared</dd>
+                <dt className="text-muted">Signature</dt>
+                <dd className="text-ink-2">Ed25519 over canonical JSON, checked by anyone at /verify</dd>
               </dl>
             </Card>
           </div>

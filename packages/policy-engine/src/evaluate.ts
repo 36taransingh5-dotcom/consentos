@@ -246,6 +246,7 @@ function combine(trace: RuleCheck[], request: ConsentRequest, policy?: PrivacyPo
   if (deciding) {
     const details: ConsentDecision["details"] = {};
     if (deciding.rule) details.rule = deciding.rule;
+    if (deciding.value !== undefined) details.ruleValue = deciding.value;
     if (deciding.check === "retention" && policy) {
       if (retention !== undefined) details.requestedRetentionDays = retention;
       details.maxRetentionDays = policy.maxRetentionDays;
@@ -266,10 +267,15 @@ function combine(trace: RuleCheck[], request: ConsentRequest, policy?: PrivacyPo
   if (retention !== undefined && policy && request.purpose !== "essential") {
     reason += ` Retention of ${days(retention)} is within the ${policy.maxRetentionDays}-day limit.`;
   }
+  // The purpose rule is what permitted it; report it the same way a denial reports its rule.
+  const purposeCheck = trace.find((c) => c.check === "purpose");
   return {
     decision: "ALLOW",
     reasonCode: anonymizedAnalytics ? "ANONYMIZED_ANALYTICS_ALLOWED" : "POLICY_ALLOWS",
     reason: anonymizedAnalytics ? "Anonymised analytics is permitted by the user's privacy policy." : reason,
+    ...(purposeCheck?.rule && purposeCheck.value !== undefined
+      ? { details: { rule: purposeCheck.rule, ruleValue: purposeCheck.value } }
+      : {}),
     trace,
   };
 }

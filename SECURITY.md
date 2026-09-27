@@ -86,7 +86,7 @@ The browser never holds a secret that can authorise data use.
 - Rate limiting is in memory per instance. Use a shared store (Redis or Postgres) behind multiple instances.
 - Extension tokens have no per-token revocation list; they expire, and rotating the session secret revokes all of them.
 - No key-management service: the signing key is an environment variable. `CONSENTOS_VERIFICATION_KEYS` supports rotation (old public keys keep verifying) but there's no rotation UI.
-- The content script matches all http(s) pages so it can detect integrations. It reads one meta tag and listens for SDK messages; it doesn't read page content.
+- The content scripts match all http(s) pages so they can detect integrations. They read one meta tag and `window.__CONSENTOS_SERVICE__`, and listen for SDK messages. They don't read page content, and nothing they see is trusted as a decision.
 - Account linking between a service's user and a ConsentOS user is configuration-based in the demo.
 
 ## Reporting

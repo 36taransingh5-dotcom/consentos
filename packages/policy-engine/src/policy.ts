@@ -115,3 +115,25 @@ export function diffPolicies(before: PrivacyPolicy, after: PrivacyPolicy): (keyo
   const keys: (keyof PrivacyPolicy)[] = [...RULE_KEYS, "maxRetentionDays"];
   return keys.filter((key) => before[key] !== after[key]);
 }
+
+export interface RuleExplanation {
+  /** "AI model training", "Retention limit". */
+  label: string;
+  /** "BLOCK", "ALLOW", "ASK", "ANONYMOUS ONLY", "90 days". */
+  display: string;
+}
+
+/**
+ * Human form of the rule that decided a request (`details.rule` / `details.ruleValue`),
+ * e.g. `policy.foundationModelTraining` + `deny` → { "AI model training", "BLOCK" }.
+ */
+export function explainRule(rule: string | undefined | null, value: string | number | undefined | null): RuleExplanation | null {
+  if (!rule || value === undefined || value === null) return null;
+  const key = rule.replace(/^policy\./, "");
+  if (key === "maxRetentionDays") return { label: "Retention limit", display: `${value} days` };
+  const info = RULE_CATALOG.find((r) => r.key === key);
+  if (!info || typeof value !== "string") return null;
+  const known = ["allow", "deny", "ask", "allow_anonymized_only"];
+  if (!known.includes(value)) return null;
+  return { label: info.label, display: ruleDisplay(value as PrivacyPolicy[PolicyRuleKey]) };
+}

@@ -398,6 +398,33 @@ button {
   line-height: 1.45;
 }
 
+.explain {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.explain dt {
+  color: var(--muted);
+}
+
+.explain dd {
+  margin: 0;
+  text-align: right;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.explain dd.tag {
+  font-size: 11px;
+}
+
 .rules-head {
   display: flex;
   align-items: baseline;

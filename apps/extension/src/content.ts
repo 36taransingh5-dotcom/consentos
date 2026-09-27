@@ -98,11 +98,8 @@ function showNotice(notice: Notice) {
     host.setAttribute("popover", "manual");
     document.documentElement.appendChild(host);
   }
-  try {
-    if (!host.matches(":popover-open")) host.showPopover();
-  } catch {
-    // Popover unsupported or element detached: the fixed position still works.
-  }
+  raise();
+  watchForModals();
   const root = host.shadowRoot!;
   const tone = TONES[notice.tone];
   root.innerHTML = `
@@ -140,9 +137,37 @@ function showNotice(notice: Notice) {
   hideTimer = window.setTimeout(hide, 6000);
 }
 
+/**
+ * Put the notice on top of the browser's top layer. Re-opening moves it above
+ * anything that entered the top layer since (e.g. a page <dialog> opened after
+ * an earlier notice).
+ */
+function raise() {
+  if (!host) return;
+  try {
+    if (host.matches(":popover-open")) host.hidePopover();
+    host.showPopover();
+  } catch {
+    // Popover unsupported: the fixed, max z-index position still applies.
+  }
+}
+
+let modalObserver: MutationObserver | null = null;
+
+/** While a notice is visible, keep it above page modals that open later. */
+function watchForModals() {
+  if (modalObserver) return;
+  modalObserver = new MutationObserver((mutations) => {
+    if (mutations.some((m) => m.target instanceof HTMLDialogElement && m.target.open)) raise();
+  });
+  modalObserver.observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ["open"] });
+}
+
 function hide() {
   host?.remove();
   host = null;
+  modalObserver?.disconnect();
+  modalObserver = null;
 }
 
 chrome.runtime.onMessage.addListener((raw: unknown) => {

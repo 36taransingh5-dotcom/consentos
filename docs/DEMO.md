@@ -24,7 +24,7 @@ Open the extension on the ConsentOS tab.
 
 > "I set these once. Every site that integrates ConsentOS has to ask them."
 
-The popup shows **Your Privacy Rules**: AI model training BLOCK · Targeted advertising BLOCK · Third-party sharing BLOCK · Personalised recommendations ALLOW · Retention limit 90 days. The site card reads *"This site has not integrated ConsentOS yet. Your policy remains active for supported services."*
+The popup shows **Your Privacy Rules**: AI model training BLOCK · Targeted advertising BLOCK · Third-party sharing BLOCK · Personalised recommendations ALLOW · Retention limit 90 days. On a site that hasn't integrated ConsentOS it says so plainly: *"ConsentOS integration not detected."* On ConsentOS itself it says *"This is where your rules live."*
 
 ## Scene 2 — a request that's allowed (25 s)
 
@@ -39,9 +39,9 @@ Switch to **Pixly** and click **Enable smart recommendations**.
 
 Click **Help train Pixly AI**.
 
-- Pixly shows **"ConsentOS blocked this action. Your photos cannot be used for foundation-model training."**
-- At the same moment the extension shows an in-page notice (*Blocked by your rules*) and the badge turns red with **1**.
-- Open the extension: *Latest: Pixly tried to use your uploaded images for AI model training. BLOCKED.* AI model training is marked *tried just now*.
+- Pixly shows **"ConsentOS blocked this action. Your photos cannot be used for foundation-model training."** with the reasoning spelled out: *Purpose requested: Foundation-model training · Your ConsentOS rule: BLOCK · Decision: DENY*.
+- At the same moment the extension shows an in-page notice (*Blocked by your rules*), above Pixly's dialog, and the badge turns red with **1**.
+- Open the extension: *Latest: Pixly tried to use your uploaded images for AI model training. BLOCKED*, with the same Purpose → Rule → Decision breakdown. AI model training is marked *tried just now*.
 
 Optional (10 s): click **Turn on Memories**. Personalisation is allowed, but Memories wants 730 days: **Requested retention 730 days · Your limit 90 days**.
 

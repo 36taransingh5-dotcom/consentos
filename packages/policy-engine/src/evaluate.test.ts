@@ -30,7 +30,7 @@ describe("spec scenarios (default policy)", () => {
     expect(result.decision).toBe("DENY");
     expect(result.reasonCode).toBe("PURPOSE_DENIED");
     expect(result.reason).toBe("Foundation-model training is blocked by the user's privacy policy.");
-    expect(result.details).toEqual({ rule: "policy.foundationModelTraining" });
+    expect(result.details).toEqual({ rule: "policy.foundationModelTraining", ruleValue: "deny" });
   });
 
   it("allows personalisation within the retention limit", () => {
@@ -40,6 +40,7 @@ describe("spec scenarios (default policy)", () => {
     expect(result.reason).toBe(
       "Personalisation is permitted by the user's privacy policy. Retention of 30 days is within the 90-day limit.",
     );
+    expect(result.details).toEqual({ rule: "policy.personalization", ruleValue: "allow" });
   });
 
   it("denies retention beyond the user's maximum and reports both numbers", () => {
@@ -48,6 +49,7 @@ describe("spec scenarios (default policy)", () => {
     expect(result.reasonCode).toBe("RETENTION_EXCEEDS_LIMIT");
     expect(result.details).toEqual({
       rule: "policy.maxRetentionDays",
+      ruleValue: 90,
       requestedRetentionDays: 730,
       maxRetentionDays: 90,
     });

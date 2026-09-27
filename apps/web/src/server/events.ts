@@ -30,6 +30,8 @@ export interface EventMetadata {
   version?: number;
   retentionDays?: number | null;
   maxRetentionDays?: number;
+  rule?: string;
+  ruleValue?: string | number;
   [key: string]: unknown;
 }
 
@@ -99,6 +101,8 @@ function toSummary(row: EventRow): StoredEvent {
     dataType: m.dataType ?? null,
     receiptId: m.receiptId ?? null,
     requestId: m.requestId ?? null,
+    rule: m.rule ?? null,
+    ruleValue: m.ruleValue ?? null,
     message: describeEvent(row.event_type, row.service_name ?? "A service", m),
     createdAt: iso(row.created_at),
   };

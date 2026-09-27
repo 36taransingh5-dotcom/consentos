@@ -66,7 +66,7 @@ Response `200`:
   "decision": "ALLOW | DENY | REQUIRE_USER",
   "reasonCode": "POLICY_ALLOWS",
   "reason": "Personalisation is permitted by the user's privacy policy. …",
-  "details": { "rule": "policy.maxRetentionDays", "requestedRetentionDays": 730, "maxRetentionDays": 90 },
+  "details": { "rule": "policy.maxRetentionDays", "ruleValue": 90, "requestedRetentionDays": 730, "maxRetentionDays": 90 },
   "evaluatedAt": "ISO-8601",
   "policyVersion": 3,
   "receiptId": "uuid | null",
@@ -74,6 +74,8 @@ Response `200`:
   "engineVersion": "1.0.0"
 }
 ```
+
+`details.rule` / `details.ruleValue` name the policy rule that decided (for ALLOW, the purpose rule that permitted it) and its value at evaluation time, so any client can render the decision as *purpose requested → the user's rule → decision* without interpreting prose.
 
 **Evaluation order** (deny-overrides; the first denying check explains the decision, otherwise the first asking check):
 
@@ -173,6 +175,8 @@ A page belonging to a service declares itself explicitly:
 
 ```html
 <meta name="consentos-service" content="pixly">
+<!-- and/or -->
+<script>window.__CONSENTOS_SERVICE__ = { serviceId: "pixly", name: "Pixly", protocol: "consentos/1" }</script>
 ```
 
 It may also post hints on its own origin. These are hints only; the user agent always re-fetches state from the ConsentOS server:

@@ -156,6 +156,8 @@ export async function evaluateConsent(service: ServiceSummary, body: EvaluateReq
         dataType: request.dataType,
         retentionDays: request.retentionDays,
         maxRetentionDays: result.details?.maxRetentionDays,
+        rule: result.details?.rule,
+        ruleValue: result.details?.ruleValue,
       },
     });
 

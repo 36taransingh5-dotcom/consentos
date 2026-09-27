@@ -40,6 +40,7 @@ const common = {
 const builds = [
   { ...common, entryPoints: ["src/background.ts"], outfile: "dist/background.js", format: "esm" },
   { ...common, entryPoints: ["src/content.ts"], outfile: "dist/content.js", format: "iife" },
+  { ...common, entryPoints: ["src/detect.ts"], outfile: "dist/detect.js", format: "iife" },
   { ...common, entryPoints: ["src/popup/main.tsx"], outfile: "dist/popup.js", format: "iife", jsx: "automatic" },
 ];
 

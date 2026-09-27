@@ -17,6 +17,8 @@ export interface Feature {
   title: string;
   /** Mid-sentence phrase: "Pixly asked to use your photos for ___". */
   activity: string;
+  /** The ConsentOS purpose, as shown in decision explanations. */
+  purposeLabel: string;
   blurb: string;
   cta: string;
   ask: ConsentAsk;
@@ -31,6 +33,7 @@ export const FEATURES: Record<FeatureId, Feature> = {
     id: "essential",
     title: "Account storage",
     activity: "your account",
+    purposeLabel: "Essential processing",
     blurb: "Keep your account, uploads and settings.",
     cta: "Store my account",
     ask: { dataType: "account", purpose: "essential", thirdPartySharing: false },
@@ -41,6 +44,7 @@ export const FEATURES: Record<FeatureId, Feature> = {
     id: "recommendations",
     title: "Smart recommendations",
     activity: "smart recommendations",
+    purposeLabel: "Personalisation",
     blurb: "Photos picked for you, based on what you upload. Pixly keeps the signals for 30 days.",
     cta: "Enable smart recommendations",
     ask: { dataType: "uploaded_images", purpose: "personalization", retentionDays: 30, thirdPartySharing: false },
@@ -51,6 +55,7 @@ export const FEATURES: Record<FeatureId, Feature> = {
     id: "memories",
     title: "Pixly Memories",
     activity: "Pixly Memories",
+    purposeLabel: "Personalisation",
     blurb: "Resurface photos from up to two years ago, on the day you took them.",
     cta: "Turn on Memories",
     ask: { dataType: "uploaded_images", purpose: "personalization", retentionDays: 730, thirdPartySharing: false },
@@ -61,6 +66,7 @@ export const FEATURES: Record<FeatureId, Feature> = {
     id: "training",
     title: "Help train Pixly AI",
     activity: "training Pixly AI",
+    purposeLabel: "Foundation-model training",
     blurb: "Let Pixly use your photos to improve its image model.",
     cta: "Help train Pixly AI",
     ask: { dataType: "uploaded_images", purpose: "foundation_model_training", retentionDays: 365, thirdPartySharing: false },

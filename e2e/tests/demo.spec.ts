@@ -36,7 +36,8 @@ test("ConsentOS demo flow", async ({ context, worker, extensionId, request }) =>
   ]) {
     await expect(rulesPopup.locator(".rules .row", { hasText: label })).toContainText(value);
   }
-  await expect(rulesPopup.getByText("This site has not integrated ConsentOS yet.")).toBeVisible();
+  await expect(rulesPopup.getByRole("heading", { name: "ConsentOS integration not detected." })).toBeVisible();
+  await expect(rulesPopup.getByText(/This site has not integrated ConsentOS yet\./)).toBeVisible();
   await shot(rulesPopup, "02-popup-rules");
   await rulesPopup.close();
 
@@ -64,6 +65,11 @@ test("ConsentOS demo flow", async ({ context, worker, extensionId, request }) =>
   const dialog = pixly.getByRole("dialog");
   await expect(dialog.getByRole("heading", { name: "ConsentOS blocked this action." })).toBeVisible();
   await expect(dialog).toContainText("Your photos cannot be used for foundation-model training.");
+  // Explainable without interpretation: purpose requested → the user's rule → decision.
+  await expect(dialog.getByText("Purpose requested")).toBeVisible();
+  await expect(dialog).toContainText("Foundation-model training");
+  await expect(dialog).toContainText("Your ConsentOS ruleBLOCK");
+  await expect(dialog).toContainText("DecisionDENY");
   // The extension reacts at the same moment: an in-page notice and a badge.
   await expect(pixly.locator("consentos-notice")).toContainText("Blocked by your rules");
   await expect.poll(() => worker.evaluate(() => chrome.action.getBadgeText({}))).toBe("1");
@@ -73,6 +79,9 @@ test("ConsentOS demo flow", async ({ context, worker, extensionId, request }) =>
   popup = await openPopup(context, extensionId, pixlyTab);
   await expect(popup.getByText("Pixly tried to use your uploaded images for AI model training.")).toBeVisible();
   await expect(popup.locator(".event .pill")).toHaveText("Blocked");
+  await expect(popup.getByLabel("Why")).toContainText("Purpose requestedFoundation-model training");
+  await expect(popup.getByLabel("Why")).toContainText("Your ruleBLOCK");
+  await expect(popup.getByLabel("Why")).toContainText("DecisionDENY");
   await expect(popup.getByLabel("What Pixly may do")).toContainText("AI model training");
   await shot(popup, "05-popup-pixly");
   await popup.close();
@@ -99,6 +108,8 @@ test("ConsentOS demo flow", async ({ context, worker, extensionId, request }) =>
   const receiptId: string = state.features.recommendations.receiptId;
   await web.goto(`${CONSENTOS}/receipts/${receiptId}`);
   await expect(web.getByText("Verified", { exact: true })).toBeVisible();
+  await expect(web.getByLabel("Decision summary")).toContainText("Personalisation");
+  await expect(web.getByLabel("Decision summary")).toContainText("ALLOW");
   for (const check of ["Signature verified", "Policy hash verified", "Request hash verified", "Payload unchanged"]) {
     await expect(web.getByText(check)).toBeVisible();
   }

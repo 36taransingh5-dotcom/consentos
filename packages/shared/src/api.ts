@@ -195,6 +195,9 @@ export interface EventSummary {
   dataType: string | null;
   receiptId: string | null;
   requestId: string | null;
+  /** The policy rule that decided, e.g. "policy.foundationModelTraining", and its value then. */
+  rule: string | null;
+  ruleValue: string | number | null;
   message: string;
   createdAt: string;
 }

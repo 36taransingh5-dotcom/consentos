@@ -1,4 +1,4 @@
-import { dataTypeNoun, purposeActivity } from "@consentos/policy-engine";
+import { dataTypeNoun, explainRule, isKnownPurpose, PURPOSE_CATALOG, purposeActivity } from "@consentos/policy-engine";
 import type { EventSummary, ExtensionState, PendingSummary } from "@consentos/shared";
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, fetchState, resolveRequest, revokeGrant } from "../lib/api";
@@ -30,6 +30,10 @@ const RULE_ORDER = [
 ];
 
 const BRAND: Record<string, string> = { pixly: "#ff5a4e" };
+
+function purposeFormal(purpose: string): string {
+  return isKnownPurpose(purpose) ? PURPOSE_CATALOG[purpose].formal : purpose.replace(/_/g, " ");
+}
 
 function open(url: string) {
   void chrome.tabs.create({ url });
@@ -212,6 +216,29 @@ function eventPill(event: EventSummary): { tone: string; text: string } {
   }
 }
 
+/**
+ * The decision, spelled out with no interpretation:
+ * purpose requested → the user's rule → the decision.
+ */
+function Explanation({ event }: { event: EventSummary }) {
+  if (event.type !== "consent.allowed" && event.type !== "consent.denied") return null;
+  const rule = explainRule(event.rule, event.ruleValue);
+  if (!rule || !event.purpose || !event.decision) return null;
+  const retention = event.rule === "policy.maxRetentionDays";
+  return (
+    <dl className="explain" aria-label="Why">
+      <dt>Purpose requested</dt>
+      <dd>{purposeFormal(event.purpose)}</dd>
+      <dt>Your rule</dt>
+      <dd className={retention ? "" : `tag ${rule.display === "ANONYMOUS ONLY" ? "ANON" : rule.display}`}>
+        {retention ? `${rule.display} max` : rule.display}
+      </dd>
+      <dt>Decision</dt>
+      <dd className={`tag ${event.decision === "ALLOW" ? "ALLOW" : "BLOCK"}`}>{event.decision}</dd>
+    </dl>
+  );
+}
+
 function LatestEvent({ event }: { event: EventSummary }) {
   const pill = eventPill(event);
   return (
@@ -223,6 +250,7 @@ function LatestEvent({ event }: { event: EventSummary }) {
         <p>{event.message}</p>
         <span className={`pill ${pill.tone}`}>{pill.text}</span>
       </div>
+      <Explanation event={event} />
     </div>
   );
 }
@@ -354,16 +382,25 @@ function Ready({
   }
 
   if (!site) {
+    const onConsentOS = tab.host !== null && tab.host === hostOf(apiUrl);
     return (
       <>
         <div className="body">
-          <div className="card unsupported">
-            <p className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Globe /> {tab.host ?? "This page"}
-            </p>
-            <h2>This site has not integrated ConsentOS yet.</h2>
-            <p>Your policy remains active for supported services.</p>
-          </div>
+          {onConsentOS ? (
+            <div className="card unsupported">
+              <p className="eyebrow">ConsentOS</p>
+              <h2>This is where your rules live.</h2>
+              <p>Change them here and every integrated service is answered by the new version immediately.</p>
+            </div>
+          ) : (
+            <div className="card unsupported">
+              <p className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Globe /> {tab.host ?? "This page"}
+              </p>
+              <h2>ConsentOS integration not detected.</h2>
+              <p>This site has not integrated ConsentOS yet. Your policy remains active for supported services.</p>
+            </div>
+          )}
           <Pending items={state.pending} busy={busy} onResolve={onResolve} />
           <Rules state={state} />
           {state.recentEvents[0] && (
@@ -409,6 +446,14 @@ function Ready({
             </div>
           </div>
 
+          {site.latestEvent && (
+            <>
+              <div className="divider" />
+              <LatestEvent event={site.latestEvent} />
+              <div className="divider" />
+            </>
+          )}
+
           <ul className="list" aria-label={`What ${site.service.name} may do`}>
             {site.grants.map((g) => (
               <li key={g.receiptId} className="row">
@@ -450,12 +495,6 @@ function Ready({
             })}
           </ul>
 
-          {site.latestEvent && (
-            <>
-              <div className="divider" />
-              <LatestEvent event={site.latestEvent} />
-            </>
-          )}
         </div>
 
         <Pending items={site.pending} busy={busy} onResolve={onResolve} />

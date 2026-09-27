@@ -78,3 +78,26 @@ export async function tabIdFor(worker: Worker, origin: string): Promise<number> 
     .not.toBeNull();
   return id!;
 }
+
+/** Reset the demo account, sign in as the demo user and connect the extension. */
+export async function signInAndConnect(context: BrowserContext): Promise<Page> {
+  const reset = await context.request.post(`${CONSENTOS}/api/demo/reset`, {
+    headers: { "x-consentos-demo-token": DEMO_RESET_TOKEN },
+  });
+  expect(reset.ok()).toBe(true);
+  const web = await context.newPage();
+  await web.goto(`${CONSENTOS}/login?next=/extension/connect`);
+  await web.getByRole("button", { name: "Continue as demo user" }).click();
+  await expect(web.getByRole("heading", { name: "Extension connected" })).toBeVisible();
+  return web;
+}
+
+/** Tab ids the extension has registered as belonging to a ConsentOS service. */
+export async function registeredTabs(worker: Worker): Promise<number[]> {
+  return worker.evaluate(async () => {
+    const all = await chrome.storage.session.get(null);
+    return Object.keys(all)
+      .filter((key) => key.startsWith("tab:"))
+      .map((key) => Number(key.slice(4)));
+  });
+}

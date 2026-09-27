@@ -374,7 +374,7 @@ export function PixlyApp({ consentosUrl }: { consentosUrl: string }) {
             <p className="text-[13px] font-medium text-coral">Welcome back</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Good to see you, Alex.</h1>
             <p className="mt-2 text-[15px] text-muted">
-              {photos.length} photos · 2 albums · {uploads.length > 0 ? "uploaded just now" : "last upload yesterday"}
+              {photos.length} photos in your library{uploads.length > 0 ? " · uploaded just now" : ""}
             </p>
           </div>
 

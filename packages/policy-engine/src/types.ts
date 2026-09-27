@@ -100,10 +100,16 @@ export interface ConsentDecision {
   decision: Decision;
   reasonCode: ReasonCode;
   reason: string;
+  /**
+   * The policy rule that decided (for ALLOW, the purpose rule that permitted
+   * it) and its value, so a decision can be shown as
+   * "purpose requested → your rule → decision" without any interpretation.
+   */
   details?: {
+    rule?: string;
+    ruleValue?: string | number;
     requestedRetentionDays?: number;
     maxRetentionDays?: number;
-    rule?: string;
   };
   /** Every check that ran, in evaluation order. */
   trace: RuleCheck[];

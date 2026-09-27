@@ -1,4 +1,12 @@
-import { dataTypeLabel, dataTypeNoun, PURPOSE_CATALOG, isKnownPurpose, purposeLabel, type RuleCheck } from "@consentos/policy-engine";
+import {
+  dataTypeLabel,
+  dataTypeNoun,
+  explainRule,
+  isKnownPurpose,
+  PURPOSE_CATALOG,
+  purposeLabel,
+  type RuleCheck,
+} from "@consentos/policy-engine";
 import { uuidSchema } from "@consentos/shared";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -14,6 +22,10 @@ import { RevokeButton } from "../receipt-actions";
 import { DownloadReceipt, VerifyPanel } from "./verify-panel";
 
 export const metadata: Metadata = { title: "Consent receipt" };
+
+function purposeFormal(purpose: string) {
+  return isKnownPurpose(purpose) ? PURPOSE_CATALOG[purpose].formal : purpose.replace(/_/g, " ");
+}
 
 function activity(purpose: string) {
   return isKnownPurpose(purpose) ? PURPOSE_CATALOG[purpose].activity : purpose.replace(/_/g, " ");
@@ -59,6 +71,13 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
   const allowed = record.decision === "ALLOW";
   const serviceName = record.serviceName ?? record.serviceId;
   const standing = (await buildExtensionState(user, { serviceId: record.serviceId })).site;
+  // The check that decided: first denial, else first escalation, else the purpose rule that allowed it.
+  const deciding =
+    trace.find((c) => c.outcome === "deny") ??
+    trace.find((c) => c.outcome === "ask") ??
+    trace.find((c) => c.check === "purpose");
+  const rule = explainRule(deciding?.rule, deciding?.value);
+  const userAnswered = p.decision.reasonCode === "USER_APPROVED" || p.decision.reasonCode === "USER_DECLINED";
 
   const statement = allowed
     ? `On ${formatDateTime(record.issuedAt)}, ${p.decision.reasonCode === "USER_APPROVED" ? "you" : "your privacy rules"} allowed ${serviceName} to use your ${dataTypeNoun(r.dataType)} for ${activity(r.purpose)}${r.retentionDays !== null && r.purpose !== "essential" ? `, kept for up to ${formatRetention(r.retentionDays).toLowerCase()}` : ""}, ${r.thirdPartySharing ? "shared with third parties" : "without sharing them with third parties"}.`
@@ -123,6 +142,34 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
       </header>
 
       <p className="mt-6 max-w-3xl text-[17px] leading-relaxed text-ink-2">{statement}</p>
+
+      <dl className="mt-6 grid overflow-hidden rounded-2xl border border-line bg-surface sm:grid-cols-3" aria-label="Decision summary">
+        <div className="border-b border-line px-5 py-4 sm:border-r sm:border-b-0">
+          <dt className="text-[12px] text-muted">Purpose requested</dt>
+          <dd className="mt-1 text-[15px] font-medium text-ink">{purposeFormal(r.purpose)}</dd>
+        </div>
+        <div className="border-b border-line px-5 py-4 sm:border-r sm:border-b-0">
+          <dt className="text-[12px] text-muted">{userAnswered ? "Your answer" : "Your rule"}</dt>
+          <dd className="mt-1 text-[15px] font-medium text-ink">
+            {userAnswered ? (
+              p.decision.decision === "ALLOW" ? "Allowed when asked" : "Declined when asked"
+            ) : rule ? (
+              <>
+                {rule.label}{" "}
+                <span className={allowed ? "font-semibold text-allow" : "font-semibold text-block"}>{rule.display}</span>
+              </>
+            ) : (
+              "—"
+            )}
+          </dd>
+        </div>
+        <div className={allowed ? "bg-allow-bg px-5 py-4" : "bg-block-bg px-5 py-4"}>
+          <dt className="text-[12px] text-muted">Decision</dt>
+          <dd className={allowed ? "mt-1 text-[15px] font-semibold text-allow" : "mt-1 text-[15px] font-semibold text-block"}>
+            {p.decision.decision}
+          </dd>
+        </div>
+      </dl>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">

@@ -139,7 +139,7 @@ They combine **deny-overrides**: any deny wins, then any ask, otherwise allow. T
   "decision": "DENY",
   "reasonCode": "RETENTION_EXCEEDS_LIMIT",
   "reason": "Requested retention of 730 days exceeds the user's limit of 90 days.",
-  "details": { "rule": "policy.maxRetentionDays", "requestedRetentionDays": 730, "maxRetentionDays": 90 },
+  "details": { "rule": "policy.maxRetentionDays", "ruleValue": 90, "requestedRetentionDays": 730, "maxRetentionDays": 90 },
   "evaluatedAt": "2026-09-26T14:32:08.114Z",
   "policyVersion": 1,
   "receiptId": "…",
@@ -152,7 +152,9 @@ They combine **deny-overrides**: any deny wins, then any ask, otherwise allow. T
 
 **Policy versioning.** Every save appends a new version with `sha256(canonical(policy))`. The database refuses edits to saved versions (trigger). After a change, every active grant is re-evaluated, and those the new rules would deny are revoked with reason `policy_change`.
 
-The engine has 97 tests. They include the spec's cases, a purpose × rule matrix, retention boundaries, malformed input, prototype-pollution names, determinism, and an invariant sweep over 41,472 generated policy/request combinations.
+Every decision names the rule that made it (`details.rule`, `details.ruleValue`). Pixly, the extension and the receipt page use that to show it without interpretation: **Purpose requested → Your rule → Decision**, e.g. *Foundation-model training → BLOCK → DENY*.
+
+The engine has 99 tests. They include the spec's cases, a purpose × rule matrix, retention boundaries, malformed input, prototype-pollution names, determinism, and an invariant sweep over 41,472 generated policy/request combinations.
 
 ## Cryptographic Receipts
 
@@ -213,11 +215,11 @@ Revoked grants return `CONSENT_REVOKED`. If ConsentOS can't be reached, Pixly **
 
 Manifest V3 with a React popup, a background service worker and a content script ([`apps/extension`](apps/extension)).
 
-- **Integrated sites** declare themselves explicitly with `<meta name="consentos-service" content="pixly">`, or through the SDK's `announceService()`. There's no DOM scraping. The extension compares the tab's real origin, supplied by the browser rather than the page, against the service's registered domain. A page that claims to be Pixly from another origin gets an "Unverified claim" warning.
-- **Popup:** site status, the counts from the spec (Allowed and Blocked), grants with **Revoke**, blocked purposes (with "tried just now" for real attempts), pending "ask me" requests with Allow/Decline, the latest event, and your rules. On other sites it shows *"This site has not integrated ConsentOS yet. Your policy remains active for supported services."* plus your rules.
+- **Integrated sites** declare themselves explicitly: with `<meta name="consentos-service" content="pixly">`, with `window.__CONSENTOS_SERVICE__` (read by a tiny script in the page's own JavaScript world), or through the SDK's `announceService()`, which sets both. There's no DOM scraping. The extension compares the tab's real origin, supplied by the browser rather than the page, against the service's registered domain. A page that claims to be Pixly from another origin gets an "Unverified claim" warning.
+- **Popup:** site status, the counts from the spec (Allowed and Blocked), grants with **Revoke**, blocked purposes (with "tried just now" for real attempts), pending "ask me" requests with Allow/Decline, the latest event, and your rules. The latest decision is spelled out as *Purpose requested → Your rule → Decision*. On other sites it never pretends to protect anything: *"ConsentOS integration not detected. This site has not integrated ConsentOS yet. Your policy remains active for supported services."*, plus your rules.
 - **Live updates:** after a decision the SDK posts a hint (never trusted as data). The background worker fetches the truth from ConsentOS, updates the badge ("1" blocked), and shows a short in-page notice. The notice is in a shadow DOM, rendered in the top layer so it sits above page modals. There's a 30-second alarm poll as a fallback, and a 2-second refresh while the popup is open.
 - **Connecting:** the web app's `/extension/connect` page mints a scoped, expiring extension token. The content script accepts it **only on the configured ConsentOS origin**, and the background worker checks `sender.origin` again. The token lives in `chrome.storage.local`, which pages can't read.
-- **Permissions:** `storage`, `alarms`, `activeTab`, host access to the ConsentOS server, and a content script on http(s) pages that only reads the ConsentOS meta tag and listens for SDK messages.
+- **Permissions:** `storage`, `alarms`, `activeTab`, and host access to the ConsentOS server. Content scripts run on http(s) pages, but they only read the ConsentOS meta tag or `window.__CONSENTOS_SERVICE__` and listen for SDK messages.
 
 ```bash
 pnpm build:extension
@@ -269,7 +271,8 @@ Reset any time with **Reset demo**, available in Pixly's inspector bar or on the
 | Command | What it runs |
 | --- | --- |
 | `pnpm test` | Unit and integration tests. The web tests run the real migrations, RLS and signing on in-memory Postgres, plus a `DATABASE_URL`-mode test over the Postgres wire protocol. |
-| `pnpm test:e2e` | Playwright end-to-end: both apps plus the real extension in Chromium (reuses running dev servers) |
+| `pnpm test:e2e` | Playwright end-to-end: both apps plus the real extension in Chromium, failing on any console error (reuses running dev servers) |
+| `pnpm build && E2E_PROD=1 pnpm test:e2e` | The same suite against the production builds (`next start`) |
 | `pnpm lint` · `pnpm typecheck` · `pnpm check` | ESLint · `tsc --noEmit` across all packages · lint + typecheck + tests |
 | `pnpm build` | Production builds of both apps, the extension, and the SDK |
 

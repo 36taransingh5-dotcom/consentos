@@ -3,6 +3,7 @@ import {
   DEFAULT_POLICY,
   describeDecision,
   diffPolicies,
+  explainRule,
   isValidPolicy,
   normalizePolicy,
   purposeLabel,
@@ -95,5 +96,23 @@ describe("describeDecision", () => {
       describeDecision({ serviceName: "Pixly", dataType: "face_prints", purpose: "mood_scoring", decision: "REQUIRE_USER" }),
     ).toBe("Pixly is asking to use your face prints for mood scoring.");
     expect(purposeLabel("mood_scoring")).toBe("Mood scoring");
+  });
+});
+
+describe("explainRule", () => {
+  it("renders the deciding rule for people", () => {
+    expect(explainRule("policy.foundationModelTraining", "deny")).toEqual({ label: "AI model training", display: "BLOCK" });
+    expect(explainRule("policy.personalization", "allow")).toEqual({
+      label: "Personalised recommendations",
+      display: "ALLOW",
+    });
+    expect(explainRule("policy.maxRetentionDays", 90)).toEqual({ label: "Retention limit", display: "90 days" });
+    expect(explainRule("policy.analytics", "allow_anonymized_only")?.display).toBe("ANONYMOUS ONLY");
+  });
+
+  it("returns null for anything it cannot explain faithfully", () => {
+    expect(explainRule(undefined, "deny")).toBeNull();
+    expect(explainRule("policy.unknown", "deny")).toBeNull();
+    expect(explainRule("policy.advertising", "sometimes")).toBeNull();
   });
 });

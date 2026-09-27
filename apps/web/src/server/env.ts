@@ -76,7 +76,11 @@ function loadConfig(): ServerConfig {
     );
   }
 
-  const devSecrets = local ? loadOrCreateDevSecrets(dataDir, env.CONSENTOS_PGLITE_DIR === "memory://") : undefined;
+  // `next build` never serves requests; keep it away from the local database and dev secrets
+  // (a running dev server may have them open).
+  const building = env.NEXT_PHASE === "phase-production-build";
+  const ephemeral = building || env.CONSENTOS_PGLITE_DIR === "memory://";
+  const devSecrets = local ? loadOrCreateDevSecrets(dataDir, ephemeral) : undefined;
 
   const sessionSecret = env.CONSENTOS_SESSION_SECRET ?? devSecrets?.sessionSecret;
   const signingKeyPem = decodePem(env.CONSENTOS_SIGNING_KEY) ?? devSecrets?.signingKeyPem;
@@ -101,7 +105,7 @@ function loadConfig(): ServerConfig {
   return {
     storage,
     databaseUrl,
-    pgliteDir: env.CONSENTOS_PGLITE_DIR ?? path.join(dataDir, "pglite"),
+    pgliteDir: building ? "memory://" : (env.CONSENTOS_PGLITE_DIR ?? path.join(dataDir, "pglite")),
     dataDir,
     auth,
     supabase:

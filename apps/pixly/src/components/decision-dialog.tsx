@@ -5,6 +5,35 @@ import { useEffect, useRef } from "react";
 import { FEATURES, type FeatureId } from "@/lib/features";
 import { BlockedShieldIcon, ClockIcon, ShieldIcon } from "./icons";
 
+const RULE_WORD: Record<string, string> = { allow: "ALLOW", deny: "BLOCK", ask: "ASK", allow_anonymized_only: "ANONYMOUS ONLY" };
+
+/**
+ * The decision spelled out from ConsentOS's own response: which purpose was
+ * requested, what the user's rule says, and the resulting decision.
+ */
+function Explanation({ result, purpose }: { result: EvaluateResponse; purpose: string }) {
+  const value = result.details?.ruleValue;
+  const rule = typeof value === "number" ? `${value}-day limit` : value !== undefined ? (RULE_WORD[value] ?? value) : null;
+  return (
+    <dl className="mt-5 divide-y divide-line overflow-hidden rounded-2xl border border-line text-[14px]">
+      <div className="flex items-center justify-between gap-4 px-4 py-2.5">
+        <dt className="text-muted">Purpose requested</dt>
+        <dd className="text-right font-medium">{purpose}</dd>
+      </div>
+      {rule && (
+        <div className="flex items-center justify-between gap-4 px-4 py-2.5">
+          <dt className="text-muted">Your ConsentOS rule</dt>
+          <dd className="font-semibold tracking-wide text-block">{rule}</dd>
+        </div>
+      )}
+      <div className="flex items-center justify-between gap-4 bg-block-bg/60 px-4 py-2.5">
+        <dt className="text-muted">Decision</dt>
+        <dd className="font-semibold tracking-wide text-block">{result.decision}</dd>
+      </div>
+    </dl>
+  );
+}
+
 export type DialogState =
   | { kind: "blocked"; feature: FeatureId; result: EvaluateResponse }
   | { kind: "waiting"; feature: FeatureId; result: EvaluateResponse };
@@ -62,7 +91,7 @@ export function DecisionDialog({
               </div>
             </dl>
           ) : (
-            <p className="mt-4 rounded-2xl bg-bg px-4 py-3 text-[13.5px] leading-relaxed text-ink-2">{result.reason}</p>
+            <Explanation result={result} purpose={feature.purposeLabel} />
           )}
 
           <p className="mt-5 text-[12.5px] leading-relaxed text-muted">

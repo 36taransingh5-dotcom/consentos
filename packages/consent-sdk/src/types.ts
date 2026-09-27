@@ -42,10 +42,12 @@ export interface EvaluateResponse {
   reasonCode: ReasonCode;
   /** Human-readable explanation, safe to show to the user. */
   reason: string;
+  /** The policy rule that decided, and its value — e.g. { rule: "policy.foundationModelTraining", ruleValue: "deny" }. */
   details?: {
+    rule?: string;
+    ruleValue?: string | number;
     requestedRetentionDays?: number;
     maxRetentionDays?: number;
-    rule?: string;
   };
   evaluatedAt: string;
   policyVersion: number;
