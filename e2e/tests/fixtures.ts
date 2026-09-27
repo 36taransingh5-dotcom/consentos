@@ -5,12 +5,15 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(here, "../..");
-const EXTENSION = path.join(ROOT, "apps/extension/dist");
-export const SHOTS = path.join(ROOT, "docs/screenshots");
+/** E2E_HOSTED=1 runs against deployed URLs with an extension built for them. */
+export const HOSTED = process.env.E2E_HOSTED === "1";
+export const CONSENTOS = (process.env.E2E_CONSENTOS_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+export const PIXLY = (process.env.E2E_PIXLY_URL ?? "http://localhost:3001").replace(/\/+$/, "");
+export const DEMO_RESET_TOKEN = process.env.E2E_DEMO_RESET_TOKEN ?? "cos_test_demo_reset_local_only";
 
-export const CONSENTOS = "http://localhost:3000";
-export const PIXLY = "http://localhost:3001";
-export const DEMO_RESET_TOKEN = "cos_test_demo_reset_local_only";
+const EXTENSION = path.join(ROOT, HOSTED ? "apps/extension/dist-hosted" : "apps/extension/dist");
+// Local runs refresh the README screenshots; hosted runs keep theirs out of the repo.
+export const SHOTS = HOSTED ? path.join(ROOT, "e2e/test-results/hosted-screenshots") : path.join(ROOT, "docs/screenshots");
 
 export const test = base.extend<{ context: BrowserContext; worker: Worker; extensionId: string }>({
   // eslint-disable-next-line no-empty-pattern

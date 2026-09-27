@@ -4,6 +4,8 @@
 
 > Privacy shouldn't be a popup you click. It should be infrastructure software has to obey.
 
+**Live demo:** [consentos.vercel.app](https://consentos.vercel.app) (click *Continue as demo user*) · [consentos-pixly.vercel.app](https://consentos-pixly.vercel.app). To see the extension, build it for the live server with `CONSENTOS_API_URL=https://consentos.vercel.app EXTENSION_OUT_DIR=dist-hosted pnpm --filter @consentos/extension build`, load `apps/extension/dist-hosted` unpacked, then open `/extension/connect`.
+
 | Extension on Pixly | Blocked, live | Signed receipt |
 | --- | --- | --- |
 | ![Extension popup on Pixly](docs/screenshots/05-popup-pixly.png) | ![Pixly blocked by ConsentOS](docs/screenshots/04-pixly-blocked.png) | ![Receipt verification](docs/screenshots/07-receipt.png) |
@@ -108,9 +110,9 @@ sequenceDiagram
   PB-->>P: 403 Forbidden
 ```
 
-**Storage.** One SQL layer runs against two drivers. Locally it uses embedded Postgres (PGlite), so `pnpm dev` needs no setup. In production, `DATABASE_URL` points at Supabase Postgres through `pg`. Both run the same migration file, including RLS. Locally a small [shim](supabase/local/00_supabase_shim.sql) recreates Supabase's `auth.users`, `auth.uid()` and roles.
+**Storage.** One SQL layer runs against two drivers. Locally it uses embedded Postgres (PGlite), so `pnpm dev` needs no setup. In production, `DATABASE_URL` points at Supabase Postgres through `pg`. Both run the same migration files, including RLS. Locally a small [shim](supabase/local/00_supabase_shim.sql) recreates Supabase's `auth.users` and roles. A deployment migrates itself on first boot (`CONSENTOS_AUTO_MIGRATE=true`), serialised with an advisory lock.
 
-**Row-level security is enforced on our own queries.** Every user-facing read and write runs inside a transaction with `set local role authenticated` and the user's JWT claims. A missing `WHERE` clause can't leak another user's receipts. Only evaluation, signing and enforcement run with server privileges.
+**Row-level security is enforced on our own queries.** Every user-facing read and write runs inside a transaction as a dedicated `consentos_user` role, with the user's JWT claims set. Supabase's own REST API roles (`anon`, `authenticated`) have no access to ConsentOS tables at all, so a signed-in user can't bypass the API. A missing `WHERE` clause can't leak another user's receipts. Only evaluation, signing and enforcement run with server privileges.
 
 ## How Consent Evaluation Works
 
@@ -273,6 +275,7 @@ Reset any time with **Reset demo**, available in Pixly's inspector bar or on the
 | `pnpm test` | Unit and integration tests. The web tests run the real migrations, RLS and signing on in-memory Postgres, plus a `DATABASE_URL`-mode test over the Postgres wire protocol. |
 | `pnpm test:e2e` | Playwright end-to-end: both apps plus the real extension in Chromium, failing on any console error (reuses running dev servers) |
 | `pnpm build && E2E_PROD=1 pnpm test:e2e` | The same suite against the production builds (`next start`) |
+| `E2E_HOSTED=1 E2E_CONSENTOS_URL=… E2E_PIXLY_URL=… E2E_DEMO_RESET_TOKEN=… pnpm test:e2e` | The same suite against a deployment, with the extension built for it (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)) |
 | `pnpm lint` · `pnpm typecheck` · `pnpm check` | ESLint · `tsc --noEmit` across all packages · lint + typecheck + tests |
 | `pnpm build` | Production builds of both apps, the extension, and the SDK |
 
@@ -298,7 +301,7 @@ Honest scope for a hackathon build:
 - **ConsentOS doesn't control websites that haven't integrated it.** It's a proposed interoperable protocol: services integrate the SDK/API, the way they integrate authentication or payment infrastructure. Pixly is the reference implementation.
 - **Enforcement depends on the service calling it.** A dishonest service can skip `grants/check`. What ConsentOS guarantees is that honest services can't accidentally overstep, and that dishonest behaviour contradicts a signed record: the receipt says `thirdPartySharing: false, retentionDays: 30`, and that is provable later. Independent auditing or regulation is what turns this into accountability.
 - **Account linking is simplified.** Pixly's signed-in user maps to the ConsentOS demo account through configuration (`PIXLY_CONSENTOS_USER_ID`). A production protocol needs an OAuth-style linking flow with pairwise user identifiers.
-- **Supabase Auth adapter** (`apps/web/src/server/auth/supabase.ts`) is implemented, but this build was verified with the local auth provider. The Supabase **Postgres** path is covered by an automated test over the wire protocol; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **Supabase** is verified on the live deployment: Supabase Postgres (self-migrated), row-level security, and Supabase Auth sign-in. The full end-to-end suite passes against it. The local default remains embedded Postgres with built-in auth.
 - **Rate limits** are per instance (in memory). **Extension tokens** are stateless HMAC tokens with a 30-day expiry and no per-token revocation list; rotating `CONSENTOS_SESSION_SECRET` revokes all of them.
 - **Live updates** use polling plus in-page hints, not push. The purpose and data-type vocabulary is deliberately small; anything outside it escalates to the user.
 - ConsentOS is not legal advice, and a receipt is not by itself a GDPR consent record.

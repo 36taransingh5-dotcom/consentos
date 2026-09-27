@@ -44,9 +44,10 @@ ConsentOS decides what software may do with personal data, so it has to be harde
 
 ### One user reads or changes another user's data
 
-- Row-level security on every table (`user_id = auth.uid()`). Users can read only their own rows and append only their own policy versions. They can update only a pending request of their own (to resolve it) or an active grant of their own (to revoke it, with `revocation_reason = 'user'`). They can never insert receipts.
-- The server's own user-facing queries run as `authenticated` with the user's claims (`set local role`), so RLS guards against bugs in our SQL too.
-- Column grants hide `services.api_key_hash` from `anon`/`authenticated`.
+- Row-level security on every table, keyed on the user id in the transaction's JWT claims. Users can read only their own rows and append only their own policy versions. They can update only a pending request of their own (to resolve it) or an active grant of their own (to revoke it, with `revocation_reason = 'user'`). They can never insert receipts.
+- The server's own user-facing queries run as a dedicated role, `consentos_user`, with the user's claims (`set local role`), so RLS guards against bugs in our SQL too.
+- **Supabase's API roles are locked out.** On Supabase, `anon` and `authenticated` are the roles its auto-generated REST API (PostgREST) uses, and every ConsentOS user holds a Supabase session. They therefore get **no** privileges on ConsentOS tables, so nobody can bypass the ConsentOS API (for example, to append a policy version with a hash the server never computed). A test asserts this for every table.
+- Column grants hide `services.api_key_hash` from `consentos_user`.
 - Tests assert cross-user isolation, blocked receipt minting, blocked policy writes for others, blocked un-revocation, and hidden key hashes, on both embedded Postgres and over the wire.
 
 ### Stolen or forged user credentials

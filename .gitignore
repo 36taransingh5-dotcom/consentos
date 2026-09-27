@@ -1,6 +1,7 @@
 node_modules/
 .next/
 dist/
+dist-hosted/
 out/
 coverage/
 .turbo/
@@ -22,3 +23,6 @@ e2e/.auth/
 
 .DS_Store
 .vercel
+
+# Local copies of deployment secrets (never committed)
+.secrets/

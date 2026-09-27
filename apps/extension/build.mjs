@@ -9,7 +9,8 @@ import path from "node:path";
 
 const watch = process.argv.includes("--watch");
 const apiUrl = (process.env.CONSENTOS_API_URL ?? "http://localhost:3000").replace(/\/+$/, "");
-const out = path.resolve("dist");
+// EXTENSION_OUT_DIR lets a build for a deployed server live next to the local one (e.g. dist-hosted).
+const out = path.resolve(process.env.EXTENSION_OUT_DIR ?? "dist");
 
 function writeStatic() {
   fs.mkdirSync(path.join(out, "icons"), { recursive: true });
@@ -38,10 +39,10 @@ const common = {
 };
 
 const builds = [
-  { ...common, entryPoints: ["src/background.ts"], outfile: "dist/background.js", format: "esm" },
-  { ...common, entryPoints: ["src/content.ts"], outfile: "dist/content.js", format: "iife" },
-  { ...common, entryPoints: ["src/detect.ts"], outfile: "dist/detect.js", format: "iife" },
-  { ...common, entryPoints: ["src/popup/main.tsx"], outfile: "dist/popup.js", format: "iife", jsx: "automatic" },
+  { ...common, entryPoints: ["src/background.ts"], outfile: path.join(out, "background.js"), format: "esm" },
+  { ...common, entryPoints: ["src/content.ts"], outfile: path.join(out, "content.js"), format: "iife" },
+  { ...common, entryPoints: ["src/detect.ts"], outfile: path.join(out, "detect.js"), format: "iife" },
+  { ...common, entryPoints: ["src/popup/main.tsx"], outfile: path.join(out, "popup.js"), format: "iife", jsx: "automatic" },
 ];
 
 fs.rmSync(out, { recursive: true, force: true });
@@ -53,5 +54,5 @@ if (watch) {
   console.log(`[extension] watching — default server ${apiUrl}`);
 } else {
   await Promise.all(builds.map((options) => esbuild.build(options)));
-  console.log(`[extension] built dist/ — default server ${apiUrl}`);
+  console.log(`[extension] built ${path.relative(process.cwd(), out)}/ — default server ${apiUrl}`);
 }

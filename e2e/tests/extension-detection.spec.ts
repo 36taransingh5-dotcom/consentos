@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { expect, openPopup, registeredTabs, signInAndConnect, test } from "./fixtures";
+import { expect, openPopup, PIXLY, registeredTabs, signInAndConnect, test } from "./fixtures";
 
 const html = (head: string) => `<!doctype html><html><head><title>Test page</title>${head}</head><body><h1>Test page</h1></body></html>`;
 
@@ -28,14 +28,14 @@ test("the extension only treats explicit, origin-verified integrations as protec
   await signInAndConnect(context);
 
   // 1. A page on Pixly's origin that declares itself only via window.__CONSENTOS_SERVICE__.
-  await context.route("http://localhost:3001/declared-by-global", (route) =>
+  await context.route(`${PIXLY}/declared-by-global`, (route) =>
     route.fulfill({
       contentType: "text/html",
       body: html(`<script>window.__CONSENTOS_SERVICE__ = { serviceId: "pixly", name: "Pixly", protocol: "consentos/1" };</script>`),
     }),
   );
   let before = await registeredTabs(worker);
-  await open(context, "http://localhost:3001/declared-by-global");
+  await open(context, `${PIXLY}/declared-by-global`);
   const globalTab = await newlyRegisteredTab(worker, before);
   let popup = await openPopup(context, extensionId, globalTab);
   await expect(popup.locator(".site-name")).toHaveText("Pixly");

@@ -432,7 +432,7 @@ function Ready({
             <span className="avatar" style={{ background: BRAND[site.service.id] ?? "#3a3a40" }} aria-hidden="true">
               {site.service.name.charAt(0)}
             </span>
-            <div style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <p className="site-name">{site.service.name}</p>
               <p className="site-meta">
                 {site.service.domain}
