@@ -1,0 +1,21 @@
+{
+  "name": "consentos",
+  "private": true,
+  "description": "ConsentOS \u2014 a browser-native permission layer for personal data.",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @consentos/web --filter @consentos/pixly --filter @consentos/extension dev",
+    "dev:web": "pnpm --filter @consentos/web dev",
+    "dev:pixly": "pnpm --filter @consentos/pixly dev",
+    "build": "pnpm -r build",
+    "build:extension": "pnpm --filter @consentos/extension build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @consentos/e2e test:e2e",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
+  }
+}

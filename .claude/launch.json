@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "consentos-web",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["pnpm", "--filter", "@consentos/web", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "pixly",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["pnpm", "--filter", "@consentos/pixly", "dev"],
+      "port": 3001
+    }
+  ]
+}

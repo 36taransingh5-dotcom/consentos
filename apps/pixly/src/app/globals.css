@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #faf9f7;
+  --surface: #ffffff;
+  --ink: #17151c;
+  --ink-2: #3d3a45;
+  --muted: #6f6b78;
+  --line: #ece9e4;
+  --line-strong: #dcd8d1;
+  --coral: #ff5a4e;
+  --coral-ink: #e0412f;
+  --coral-soft: #fff0ee;
+  --allow: #0b7a4b;
+  --allow-bg: #e9f7ef;
+  --allow-line: #bfe6cf;
+  --block: #c0291d;
+  --block-bg: #fdf0ee;
+  --block-line: #f5cbc5;
+  --ask: #9a5a04;
+  --ask-bg: #fff6e3;
+  --ask-line: #f1d9a6;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-coral: var(--coral);
+  --color-coral-ink: var(--coral-ink);
+  --color-coral-soft: var(--coral-soft);
+  --color-allow: var(--allow);
+  --color-allow-bg: var(--allow-bg);
+  --color-allow-line: var(--allow-line);
+  --color-block: var(--block);
+  --color-block-bg: var(--block-bg);
+  --color-block-line: var(--block-line);
+  --color-ask: var(--ask);
+  --color-ask-bg: var(--ask-bg);
+  --color-ask-line: var(--ask-line);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace;
+}
+
+html {
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: var(--bg);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+dialog::backdrop {
+  background: rgba(23, 21, 28, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-pop {
+  animation: pop-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: spin 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
