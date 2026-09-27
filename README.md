@@ -42,17 +42,18 @@ Every site asks the same questions, one banner at a time. Nothing binds the answ
 
 ## Demo
 
-The two-minute flow is scripted in **[docs/DEMO.md](docs/DEMO.md)** and automated in [`e2e/tests/demo.spec.ts`](e2e/tests/demo.spec.ts), which drives it in real Chromium with the real extension loaded.
+Two acts, under two minutes. Scripted in **[docs/DEMO.md](docs/DEMO.md)** and automated step for step in [`e2e/tests/demo.spec.ts`](e2e/tests/demo.spec.ts), which drives it in real Chrome with the real extension loaded, against both local and deployed builds.
 
 ```text
-Scene 1  Extension shows Your Privacy Rules          AI model training BLOCK · … · Retention 90 days
-Scene 2  Pixly → "Enable smart recommendations"      ✓ ALLOWED · signed receipt · extension updates
-Scene 3  Pixly → "Help train Pixly AI"               ⛔ BLOCKED · badge "1" · in-page notice
-Scene 4  POST /api/train-model                       403 CONSENT_VIOLATION
-Scene 5  Open the receipt                            Signature ✓ · Policy hash ✓ · Request hash ✓
-Bonus    Revoke in the extension                     Pixly's next call → 403 CONSENT_REVOKED
-```
+Act 1  Rule: don't train AI on my photos     Extension: AI model training → BLOCK
+       Pixly asks                            "Help train Pixly AI"
+       Blocked                               Foundation-model training → BLOCK → DENY · extension badge "1"
+       Backend tries anyway                  POST /api/train-model → 403 CONSENT_VIOLATION
 
+Act 2  Recommendations are allowed           "Enable smart recommendations" → ALLOW
+       Signed receipt → verifies             Signature ✓ · Policy hash ✓ · Request hash ✓ · Payload ✓
+       Revoke → access disappears            Recommendations paused · 403 CONSENT_REVOKED
+```
 ## Architecture
 
 ```mermaid

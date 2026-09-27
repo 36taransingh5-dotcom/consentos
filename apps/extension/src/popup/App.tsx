@@ -227,7 +227,31 @@ function eventPill(event: EventSummary): { tone: string; text: string } {
  * The decision, spelled out with no interpretation:
  * purpose requested → the user's rule → the decision.
  */
+const GRANT_REASON: Record<string, string> = {
+  NO_GRANT: "None",
+  GRANT_NOT_FOUND: "None",
+  DECISION_NOT_ALLOW: "Refused earlier",
+  PURPOSE_MISMATCH: "Wrong purpose",
+  SERVICE_MISMATCH: "Other service's",
+  USER_MISMATCH: "Other user's",
+  DATA_TYPE_MISMATCH: "Other data",
+  REVOKED: "Revoked",
+  INTEGRITY_FAILURE: "Tampered",
+};
+
 function Explanation({ event }: { event: EventSummary }) {
+  if (event.type === "enforcement.blocked" && event.purpose) {
+    return (
+      <dl className="explain" aria-label="Why">
+        <dt>Purpose attempted</dt>
+        <dd>{purposeFormal(event.purpose)}</dd>
+        <dt>Valid grant</dt>
+        <dd className="tag BLOCK">{GRANT_REASON[event.grantReason ?? ""] ?? "None"}</dd>
+        <dt>Result</dt>
+        <dd className="tag BLOCK">403 REFUSED</dd>
+      </dl>
+    );
+  }
   if (event.type !== "consent.allowed" && event.type !== "consent.denied") return null;
   const rule = explainRule(event.rule, event.ruleValue);
   if (!rule || !event.purpose || !event.decision) return null;

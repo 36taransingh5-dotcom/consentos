@@ -38,14 +38,25 @@ export type DialogState =
   | { kind: "blocked"; feature: FeatureId; result: EvaluateResponse }
   | { kind: "waiting"; feature: FeatureId; result: EvaluateResponse };
 
+export interface Attempt {
+  status: "running" | "done";
+  httpStatus?: number;
+  body?: { error?: string; message?: string };
+}
+
 export function DecisionDialog({
   state,
   onClose,
   consentosUrl,
+  attempt,
+  onTryAnyway,
 }: {
   state: DialogState | null;
   onClose: () => void;
   consentosUrl: string;
+  /** The server-side attempt to run the blocked job anyway, if the user asked for one. */
+  attempt: Attempt | null;
+  onTryAnyway?: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -94,10 +105,46 @@ export function DecisionDialog({
             <Explanation result={result} purpose={feature.purposeLabel} />
           )}
 
-          <p className="mt-5 text-[12.5px] leading-relaxed text-muted">
-            Pixly didn&apos;t make this call — your ConsentOS rules did, and Pixly&apos;s servers are bound by them. The
-            decision is recorded in a signed receipt.
-          </p>
+          {onTryAnyway && state.feature === "training" ? (
+            <div className="mt-5 rounded-2xl border border-line bg-bg p-4" aria-live="polite">
+              {!attempt ? (
+                <>
+                  <p className="text-[13px] leading-relaxed text-ink-2">
+                    What if Pixly&apos;s server ignores this and starts training anyway?
+                  </p>
+                  <button
+                    type="button"
+                    onClick={onTryAnyway}
+                    className="mt-3 inline-flex h-9 items-center rounded-full border border-line-strong bg-surface px-4 text-[13px] font-medium hover:border-ink"
+                  >
+                    Run the training job anyway
+                  </button>
+                </>
+              ) : attempt.status === "running" ? (
+                <p className="flex items-center gap-2 text-[13px] text-muted">
+                  <span className="spinner" aria-hidden="true" /> POST /api/train-model…
+                </p>
+              ) : (
+                <>
+                  <p className="font-mono text-[12px] text-muted">POST /api/train-model</p>
+                  <p className="mt-1 font-mono text-[15px] font-semibold text-block">
+                    HTTP {attempt.httpStatus} {attempt.httpStatus === 403 ? "Forbidden" : ""}
+                  </p>
+                  <p className="mt-1 font-mono text-[12.5px] text-ink">{attempt.body?.error}</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{attempt.body?.message}</p>
+                  <p className="mt-2 text-[12px] text-muted">
+                    Pixly&apos;s training pipeline asked ConsentOS for a grant before touching a photo. There is none, so it
+                    refused to run.
+                  </p>
+                </>
+              )}
+            </div>
+          ) : (
+            <p className="mt-5 text-[12.5px] leading-relaxed text-muted">
+              Pixly didn&apos;t make this call — your ConsentOS rules did, and Pixly&apos;s servers are bound by them. The
+              decision is recorded in a signed receipt.
+            </p>
+          )}
 
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span className="font-mono text-[11.5px] text-muted">{result.reasonCode}</span>

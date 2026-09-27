@@ -103,6 +103,7 @@ function toSummary(row: EventRow): StoredEvent {
     requestId: m.requestId ?? null,
     rule: m.rule ?? null,
     ruleValue: m.ruleValue ?? null,
+    grantReason: row.event_type === "enforcement.blocked" && typeof m.reason === "string" ? m.reason : null,
     message: describeEvent(row.event_type, row.service_name ?? "A service", m),
     createdAt: iso(row.created_at),
   };

@@ -198,6 +198,8 @@ export interface EventSummary {
   /** The policy rule that decided, e.g. "policy.foundationModelTraining", and its value then. */
   rule: string | null;
   ruleValue: string | number | null;
+  /** For runtime refusals (enforcement.blocked): why the grant check failed, e.g. NO_GRANT. */
+  grantReason: string | null;
   message: string;
   createdAt: string;
 }

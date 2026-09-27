@@ -10,7 +10,7 @@ import type { PixlyState } from "@/app/api/state/route";
 import type { Exchange } from "@/lib/consentos";
 import { FEATURES, OPTIONAL_FEATURES, type FeatureId } from "@/lib/features";
 import { DISCOVER, LIBRARY, type Photo } from "@/lib/photos";
-import { DecisionDialog, type DialogState } from "./decision-dialog";
+import { DecisionDialog, type Attempt, type DialogState } from "./decision-dialog";
 import { CheckIcon, ClockIcon, CpuIcon, CrossIcon, HeartIcon, PixlyMark, ShieldIcon, SparkIcon, UploadIcon } from "./icons";
 import { Inspector } from "./inspector";
 import { Scene } from "./scene";
@@ -47,6 +47,7 @@ export function PixlyApp({ consentosUrl }: { consentosUrl: string }) {
   const [busy, setBusy] = useState<FeatureId | null>(null);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [dialog, setDialog] = useState<DialogState | null>(null);
+  const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const [recs, setRecs] = useState<Recs>({ status: "idle" });
   const [uploads, setUploads] = useState<Photo[]>([]);
@@ -184,6 +185,7 @@ export function PixlyApp({ consentosUrl }: { consentosUrl: string }) {
           setToast({ tone: "success", title: "ConsentOS approved this request", body: FEATURES[feature].allowed, receiptUrl: result.receiptUrl });
         }
       } else {
+        setAttempt(null);
         setDialog({ kind: "blocked", feature, result });
       }
       await refreshState();
@@ -634,9 +636,21 @@ export function PixlyApp({ consentosUrl }: { consentosUrl: string }) {
       <DecisionDialog
         state={dialog}
         consentosUrl={consentosUrl}
+        attempt={attempt}
+        onTryAnyway={() => {
+          setAttempt({ status: "running" });
+          void callTraining(state?.features.training.receiptId ?? null, "Train anyway").then((result) =>
+            setAttempt({
+              status: "done",
+              httpStatus: result.status,
+              body: result.body as Attempt["body"],
+            }),
+          );
+        }}
         onClose={() => {
           waitingFor.current = null;
           setDialog(null);
+          setAttempt(null);
         }}
       />
 

@@ -28,7 +28,11 @@ export const test = base.extend<{ context: BrowserContext; worker: Worker; exten
     const watch = (page: Page) => {
       page.on("pageerror", (error) => errors.push(`${page.url()} — ${error.message}`));
       page.on("console", (message) => {
-        if (message.type() === "error") errors.push(`${page.url()} — ${message.text()}`);
+        if (message.type() !== "error") return;
+        // The one expected "error": Chrome logs the deliberate 403 from Pixly's protected training endpoint.
+        const expected403 =
+          /status of 403/.test(message.text()) && /\/api\/(train-model|recommendations)$/.test(message.location().url);
+        if (!expected403) errors.push(`${page.url()} — ${message.text()} (${message.location().url})`);
       });
     };
     context.pages().forEach(watch);

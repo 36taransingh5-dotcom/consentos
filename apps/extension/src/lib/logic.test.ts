@@ -14,6 +14,7 @@ const event = (id: string, type: string, extra: Partial<EventSummary> = {}): Eve
   requestId: null,
   rule: "policy.foundationModelTraining",
   ruleValue: "deny",
+  grantReason: null,
   message: "Pixly tried to use your uploaded images for AI model training.",
   createdAt: new Date().toISOString(),
   ...extra,
