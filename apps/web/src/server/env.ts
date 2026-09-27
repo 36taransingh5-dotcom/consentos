@@ -68,8 +68,15 @@ function loadConfig(): ServerConfig {
   // Runtime-only location for local data; not part of the traced server bundle.
   const dataDir = path.resolve(/*turbopackIgnore: true*/ env.CONSENTOS_DATA_DIR ?? ".data");
 
-  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Accept both naming schemes Supabase's Vercel integration has used
+  // (legacy anon/service_role keys and the newer publishable/secret keys).
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL;
+  const supabaseAnonKey =
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    env.SUPABASE_ANON_KEY ||
+    env.SUPABASE_PUBLISHABLE_KEY;
+  const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY;
   const auth: AuthMode = supabaseUrl && supabaseAnonKey ? "supabase" : "local";
   if (auth === "supabase" && local) {
     throw new ConfigError(
@@ -111,7 +118,7 @@ function loadConfig(): ServerConfig {
     auth,
     supabase:
       auth === "supabase"
-        ? { url: supabaseUrl!, anonKey: supabaseAnonKey!, serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY }
+        ? { url: supabaseUrl!, anonKey: supabaseAnonKey!, serviceRoleKey: supabaseServiceKey }
         : undefined,
     publicUrl,
     demoMode,

@@ -1,0 +1,12 @@
+# Never upload local runtime data (embedded Postgres, dev signing key, dev session secret),
+# local env files, or build/test output. Vercel builds from source.
+**/.data
+**/.env
+**/.env.local
+**/.env.*.local
+**/node_modules
+**/.next
+**/dist
+e2e/test-results
+e2e/playwright-report
+.claude
